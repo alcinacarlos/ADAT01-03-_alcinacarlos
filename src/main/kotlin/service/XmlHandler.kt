@@ -96,7 +96,7 @@ class XmlHandler(private val filePath: Path) {
             val transformer = transformerFactory.newTransformer()
 
             val source = DOMSource(doc)
-            val result = StreamResult(Files.newBufferedWriter(filePath, StandardCharsets.UTF_8))
+            val result = StreamResult(filePath.toFile())
 
             transformer.transform(source, result)
 
