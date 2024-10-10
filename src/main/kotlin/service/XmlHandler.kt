@@ -59,7 +59,7 @@ class XmlHandler(private val filePath: Path) {
         var doc: Document? = null
         try {
             val docFactory = DocumentBuilderFactory.newInstance().newDocumentBuilder()
-                doc = docFactory.parse(filePath.toFile())
+            doc = docFactory.parse(filePath.toFile())
         } catch (e: Exception) {
             println("Error while trying to read document: ${e.message}")
             return false
