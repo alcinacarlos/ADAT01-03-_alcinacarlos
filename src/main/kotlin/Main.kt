@@ -9,4 +9,9 @@ fun main(){
     val xmlHandler = XmlHandler(empleadosXml)
     val empleados = csvHandler.csVtoEmpleados()
     xmlHandler.empleadosToXML(empleados)
+
+    xmlHandler.modifySalary(3, 1234.00)
+    val empleadosModified = xmlHandler.readXml()
+    empleadosModified.forEach { println(it) }
+
 }

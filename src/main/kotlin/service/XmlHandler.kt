@@ -10,10 +10,11 @@ import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 import org.w3c.dom.Document
 import org.w3c.dom.Element
+import org.w3c.dom.Node
 import java.nio.file.Path
 
 class XmlHandler(private val filePath: Path) {
-    fun empleadosToXML(empleados: List<Empleado>){
+    fun empleadosToXML(empleados: List<Empleado>) {
         val docFactory = DocumentBuilderFactory.newInstance().newDocumentBuilder()
         val doc: Document = docFactory.newDocument()
 
@@ -39,26 +40,105 @@ class XmlHandler(private val filePath: Path) {
             rootElement.appendChild(empleadoElement)
         }
 
+        val transformerFactory = TransformerFactory.newInstance()
+        val transformer = transformerFactory.newTransformer()
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes")
+
+        val source = DOMSource(doc)
+
         try {
-            val transformerFactory = TransformerFactory.newInstance()
-            val transformer = transformerFactory.newTransformer()
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes")
-
-            val source = DOMSource(doc)
-
-            try {
-                val result = StreamResult(Files.newBufferedWriter(filePath, StandardCharsets.UTF_8))
-                transformer.transform(source, result)
-
-            } catch (e: Exception) {
-                println("Error al escribir el archivo XML: ${e.message}")
-                e.printStackTrace()
-            }
+            val result = StreamResult(Files.newBufferedWriter(filePath, StandardCharsets.UTF_8))
+            transformer.transform(source, result)
 
         } catch (e: Exception) {
-            println("Error al transformar el documento XML: ${e.message}")
-            e.printStackTrace()
+            println("Error trying to write XML file:  ${e.message}")
         }
     }
 
+    fun modifySalary(idEmpleado: Int, newSalary: Double): Boolean {
+        var doc: Document? = null
+        try {
+            val docFactory = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+                doc = docFactory.parse(filePath.toFile())
+        } catch (e: Exception) {
+            println("Error while trying to read document: ${e.message}")
+            return false
+        }
+
+        try {
+            val empleados = doc!!.getElementsByTagName("empleado")
+            var empleadoEncontrado = false
+
+            for (i in 0 until empleados.length) {
+                val empleadoE = empleados.item(i)
+
+                if (empleadoE.nodeType == Node.ELEMENT_NODE) {
+                    val empleado = empleadoE as Element
+                    val id = empleado.getAttribute("id").toIntOrNull()
+
+                    if (id != null && id == idEmpleado) {
+                        empleadoEncontrado = true
+                        val salarioElement = empleado.getElementsByTagName("salario").item(0)
+                        salarioElement.textContent = newSalary.toString()
+                        break
+                    }
+                }
+            }
+            if (!empleadoEncontrado) return false
+
+        } catch (e: Exception) {
+            println("Error while trying to modify Empleado: ${e.message}")
+            return false
+        }
+
+        try {
+            val transformerFactory = TransformerFactory.newInstance()
+            val transformer = transformerFactory.newTransformer()
+
+            val source = DOMSource(doc)
+            val result = StreamResult(Files.newBufferedWriter(filePath, StandardCharsets.UTF_8))
+
+            transformer.transform(source, result)
+
+        } catch (e: Exception) {
+            println("Error trying to save modified salary: ${e.message}")
+            return false
+        }
+        return true
+    }
+
+    fun readXml(): List<Empleado> {
+        val empleados = mutableListOf<Empleado>()
+        var doc: Document? = null
+        try {
+            val docFactory = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+            doc = docFactory.parse(filePath.toFile())
+        } catch (e: Exception) {
+            println("Error while trying to read document: ${e.message}")
+        }
+        val root = doc!!.documentElement
+        root.normalize()
+
+        val listaNodos = root.getElementsByTagName("empleado")
+        for (i in 0..<listaNodos.length) {
+            val nodo = listaNodos.item(i)
+            if (nodo.nodeType == Node.ELEMENT_NODE) {
+                val empleado = nodo as Element
+                val id = empleado.getAttribute("id")
+                val apellido = empleado.getElementsByTagName("apellido").item(0).textContent
+                val departamento = empleado.getElementsByTagName("departamento").item(0).textContent
+                val salario = empleado.getElementsByTagName("salario").item(0).textContent
+
+                empleados.add(
+                    Empleado(
+                        id.toIntOrNull() ?:0 ,
+                        apellido,
+                        departamento,
+                        salario.toDoubleOrNull() ?: 0.0
+                    )
+                )
+            }
+        }
+        return empleados
+    }
 }
