@@ -1,8 +1,6 @@
 package service
 
 import entity.Empleado
-import java.nio.file.Files
-import java.nio.charset.StandardCharsets
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.OutputKeys
 import javax.xml.transform.TransformerFactory
@@ -47,7 +45,7 @@ class XmlHandler(private val filePath: Path) {
         val source = DOMSource(doc)
 
         try {
-            val result = StreamResult(Files.newBufferedWriter(filePath, StandardCharsets.UTF_8))
+            val result = StreamResult(filePath.toFile())
             transformer.transform(source, result)
 
         } catch (e: Exception) {
